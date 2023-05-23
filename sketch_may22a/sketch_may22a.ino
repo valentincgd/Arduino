@@ -1,4 +1,5 @@
 #include <Gamebuino-Meta.h>
+#include <string>
 
 const uint16_t player_image_data[] = {
 
@@ -217,7 +218,10 @@ void loop()
     }
     else
     {
+        string text = "T'es dead man";
 
+        gb.display.setCursorX((gb.display.width() - gb.display.textWidth(text)) / 2);
+        gb.display.println(text);
     }
     gb.display.setColor(WHITE);
     gb.display.drawImage(positionX, positionY, player);

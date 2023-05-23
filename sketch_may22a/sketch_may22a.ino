@@ -1,9 +1,7 @@
 #include <Gamebuino-Meta.h>
 
 const uint16_t player_image_data[] = {
-
     // metadata
-
     3,      // frame width
     4,      // frame height
     4,      // frames
@@ -58,199 +56,237 @@ bool onPlatform = false;
 bool isDead = false;
 
 int score = 0;
+int highScore = 0;
 
 int blink = 4;
 int rate = blink * 2;
 
 void setup()
 {
-    gb.begin();
-    generatePlatforms();
+  gb.begin();
+  generatePlatforms();
 }
 
 void generatePlatforms()
 {
-    int x = gb.display.width() / 2 - platformWidth / 2;
-    int y = gb.display.height() - platformGap;
-    for (int i = 0; i < platformCount; i++)
-    {
-        platformX[i] = x;
-        platformY[i] = y;
-        x = random(0, gb.display.width() - platformWidth);
-        y -= platformGap;
-    }
+  int x = gb.display.width() / 2 - platformWidth / 2;
+  int y = gb.display.height() - platformGap;
+  for (int i = 0; i < platformCount; i++)
+  {
+    platformX[i] = x;
+    platformY[i] = y;
+    x = random(0, gb.display.width() - platformWidth);
+    y -= platformGap;
+  }
 }
 
 bool checkCollision()
 {
-    if (ballUp)
-    {
-        return false;
-    }
-    for (int i = 0; i < platformCount; i++)
-    {
-        if (positionX + ballSize >= platformX[i] && positionX <= platformX[i] + platformWidth &&
-            positionY + ballSize >= platformY[i] && positionY <= platformY[i] + platformHeight)
-        {
-            return true;
-        }
-    }
+  if (ballUp)
+  {
     return false;
+  }
+  for (int i = 0; i < platformCount; i++)
+  {
+    if (positionX + ballSize >= platformX[i] && positionX <= platformX[i] + platformWidth &&
+        positionY + ballSize >= platformY[i] && positionY <= platformY[i] + platformHeight)
+    {
+      return true;
+    }
+  }
+  return false;
 }
 
 void dead()
 {
-    positionX = 32;
-    positionY = 35;
-    speedY = -jump[2];
-    ballUp = true;
-    score = 0;
-    isDead = true;
-    gb.display.clear();
+  positionX = 32;
+  positionY = 35;
+  speedY = -jump[2];
+  ballUp = true;
+  isDead = true;
+  gb.display.clear();
 }
 
 void updatePlatforms()
 {
-    for (int i = 0; i < platformCount; i++)
+  for (int i = 0; i < platformCount; i++)
+  {
+    if (onPlatform)
     {
-        if (onPlatform)
-        {
-            platformY[i] += speedY;
-        }
-
-        gb.display.setColor(WHITE);
-        gb.display.fillRect(platformX[i], platformY[i], platformWidth, platformHeight);
-
-        // Ajouter de nouvelles plates-formes en haut de l'écran
-        if (platformY[i] >= gb.display.height())
-        {
-            platformY[i] = -platformGap;
-            platformX[i] = random(0, gb.display.width() - platformWidth);
-        }
+      platformY[i] += speedY;
     }
+
+    gb.display.setColor(WHITE);
+    gb.display.fillRect(platformX[i], platformY[i], platformWidth, platformHeight);
+
+    // Add new platforms at the top of the screen
+    if (platformY[i] >= gb.display.height())
+    {
+      platformY[i] = -platformGap;
+      platformX[i] = random(0, gb.display.width() - platformWidth);
+    }
+  }
 }
 
 void loop()
 {
-    while (!gb.update())
-        ;
-    gb.display.clear();
+  while (!gb.update())
+    ;
+  gb.display.clear();
 
-    if (!isDead)
+  if (!isDead)
+  {
+    // Update horizontal position
+    if (gb.buttons.repeat(BUTTON_RIGHT, 0))
     {
-        // Mise à jour de la position horizontale
-        if (gb.buttons.repeat(BUTTON_RIGHT, 0))
-        {
-            positionX = positionX + 2;
-        }
+      positionX += 2;
+    }
 
-        if (gb.buttons.repeat(BUTTON_LEFT, 0))
-        {
-            positionX = positionX - 2;
-        }
+    if (gb.buttons.repeat(BUTTON_LEFT, 0))
+    {
+      positionX -= 2;
+    }
 
-        // Si la balle atteint le bord gauche
-        if (positionX < 0)
-        {
-            dead();
-        }
+    // If the ball reaches the left edge
+    if (positionX < 0)
+    {
+      dead();
+    }
 
-        // Si la balle atteint le bord droit
-        if (positionX > gb.display.width() - ballSize)
-        {
-            dead();
-        }
+    // If the ball reaches the right edge
+    if (positionX > gb.display.width() - ballSize)
+    {
+      dead();
+    }
 
-        // Mise à jour de la position verticale
-        positionY = positionY + speedY;
+    // Update vertical position
+    positionY += speedY;
 
-        // Si la balle atteint le bord haut
-        if (positionY < ((gb.display.width() / 8) * 3))
-        {
-            // On part en bas
-            ballUp = false;
-            speedY = jump[0];
-            onPlatform = false;
-        }
+    // If the ball reaches the top edge
+    if (positionY < (gb.display.width() / 8) * 3)
+    {
+      // Move down
+      ballUp = false;
+      speedY = jump[0];
+      onPlatform = false;
+    }
 
-        // Si la balle atteint le bord bas
-        if (positionY > gb.display.height() - ballSize && onPlatform)
-        {
-            // On part en haut
-            ballUp = true;
-            speedY = -jump[2];
-            onPlatform = false;
-        }
-        else if (positionY > gb.display.height() - ballSize)
-        {
-            speedY = 0;
-            dead();
-        }
+    // If the ball reaches the bottom edge
+    if (positionY > gb.display.height() - ballSize && onPlatform)
+    {
+      // Move up
+      ballUp = true;
+      speedY = -jump[2];
+      onPlatform = false;
+    }
+    else if (positionY > gb.display.height() - ballSize)
+    {
+      speedY = 0;
+      dead();
+    }
 
-        // Rebond
-        if (speedY != 0)
-        {
-            if (positionY > ((gb.display.height() / 8) * 3) && positionY < ((gb.display.height() / 8) * 4))
-            {
-                speedY = ballUp ? -jump[0] : jump[0];
-            }
+    // Bounce
+    if (speedY != 0)
+    {
+      if (positionY > (gb.display.height() / 8) * 3 && positionY < (gb.display.height() / 8) * 4)
+      {
+        speedY = ballUp ? -jump[0] : jump[0];
+      }
 
-            if (positionY > ((gb.display.height() / 8) * 4) && positionY < ((gb.display.height() / 8) * 5))
-            {
-                speedY = ballUp ? -jump[1] : jump[1];
-            }
+      if (positionY > (gb.display.height() / 8) * 4 && positionY < (gb.display.height() / 8) * 5)
+      {
+        speedY = ballUp ? -jump[1] : jump[1];
+      }
 
-            if (positionY > ((gb.display.height() / 8) * 5))
-            {
-                speedY = ballUp ? -jump[2] : jump[2];
-            }
-        }
+      if (positionY > (gb.display.height() / 8) * 5)
+      {
+        speedY = ballUp ? -jump[2] : jump[2];
+      }
+    }
 
-        // Vérifier la collision avec les plates-formes
-        onPlatform = checkCollision();
+    // Check collision with platforms
+    onPlatform = checkCollision();
 
-        updatePlatforms();
+    updatePlatforms();
 
-        if (onPlatform)
-        {
-            score++;
-        }
+    if (onPlatform)
+    {
+      score++;
+    }
 
-        gb.display.setColor(WHITE);
-        // gb.display.print("Score: " + String(score));
+    gb.display.setColor(RED);
+    gb.display.print("Score: " + String(score));
+  }
+  else
+  {
+
+    if (score > highScore || score == highScore)
+    {
+
+      gb.display.setColor(RED);
+      gb.display.println("Nouveau high score!");
+      highScore = score;
+    }
+    gb.display.setColor(WHITE);
+
+    char textMort[] = "T'es dead man";
+    char textScore[] = "Score : ";
+    char textHigh[] = "High Score : ";
+
+    char textRejouer[] = "Appuyer sur A";
+
+    gb.display.println(textMort);
+    gb.display.println(textScore + String(score));
+    gb.display.println(textHigh + String(highScore));
+
+    gb.display.println("");
+
+    if (rate == 0)
+    {
+      rate = blink * 2;
+    }
+
+    if (rate <= blink)
+    {
+      gb.display.setColor(YELLOW);
     }
     else
     {
-        char textMort[] = "T'es dead man";
-        char textScore[] = "Score : ";
-        char textRejouer[] = "Appuyer sur A";
-
-        gb.display.println(textMort);
-        gb.display.println(textScore + String(score));
-        gb.display.println("");
-
-        if (rate == 0)
-        {
-            rate = blink * 2;
-        }
-
-        if (rate <= blink)
-        {
-            gb.display.setColor(YELLOW);
-        }
-        else
-        {
-            gb.display.setColor(WHITE);
-        }
-        rate--;
-        gb.display.println(textRejouer);
-
-        if (gb.buttons.pressed(BUTTON_A))
-        {
-            isDead = false;
-            generatePlatforms();
-        }
+      gb.display.setColor(WHITE);
     }
-    gb.display.setColor(WHITE);
-    gb.display.drawImage(positionX, positionY, player);
+    rate--;
+    gb.display.println(textRejouer);
+
+    if (gb.buttons.pressed(BUTTON_A))
+    {
+      reset();
+      isDead = false;
+      generatePlatforms();
+    }
+  }
+  gb.display.setColor(WHITE);
+  gb.display.drawImage(positionX, positionY, player);
+}
+
+void reset()
+{
+  platformX[platformCount];
+  platformY[platformCount];
+  platformWidth = 20;
+  platformHeight = 2;
+  platformGap = 15;
+  platformSpeed = 1;
+
+  positionX = 32;
+  positionY = 35;
+  speedY = jump[2];
+  ballSize = 2;
+  ballUp = true;
+  onPlatform = false;
+  isDead = false;
+
+  score = 0;
+
+  blink = 4;
+  rate = blink * 2;
 }

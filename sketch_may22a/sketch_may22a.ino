@@ -1,5 +1,4 @@
 #include <Gamebuino-Meta.h>
-#include <string>
 
 const uint16_t player_image_data[] = {
 
@@ -60,6 +59,9 @@ bool isDead = false;
 
 int score = 0;
 
+int blink = 4;
+int rate = blink * 2;
+
 void setup()
 {
     gb.begin();
@@ -99,8 +101,9 @@ bool checkCollision()
 void dead()
 {
     positionX = 32;
-    positionY = 60;
-    speedY = jump[2];
+    positionY = 35;
+    speedY = -jump[2];
+    ballUp = true;
     score = 0;
     isDead = true;
     gb.display.clear();
@@ -187,17 +190,17 @@ void loop()
         // Rebond
         if (speedY != 0)
         {
-            if (positionY > ((gb.display.width() / 8) * 3) && positionY < ((gb.display.width() / 8) * 4))
+            if (positionY > ((gb.display.height() / 8) * 3) && positionY < ((gb.display.height() / 8) * 4))
             {
                 speedY = ballUp ? -jump[0] : jump[0];
             }
 
-            if (positionY > ((gb.display.width() / 8) * 4) && positionY < ((gb.display.width() / 8) * 5))
+            if (positionY > ((gb.display.height() / 8) * 4) && positionY < ((gb.display.height() / 8) * 5))
             {
                 speedY = ballUp ? -jump[1] : jump[1];
             }
 
-            if (positionY > ((gb.display.width() / 8) * 5))
+            if (positionY > ((gb.display.height() / 8) * 5))
             {
                 speedY = ballUp ? -jump[2] : jump[2];
             }
@@ -218,10 +221,35 @@ void loop()
     }
     else
     {
-        string text = "T'es dead man";
+        char textMort[] = "T'es dead man";
+        char textScore[] = "Score : ";
+        char textRejouer[] = "Appuyer sur A";
 
-        gb.display.setCursorX((gb.display.width() - gb.display.textWidth(text)) / 2);
-        gb.display.println(text);
+        gb.display.println(textMort);
+        gb.display.println(textScore + String(score));
+        gb.display.println("");
+
+        if (rate == 0)
+        {
+            rate = blink * 2;
+        }
+
+        if (rate <= blink)
+        {
+            gb.display.setColor(YELLOW);
+        }
+        else
+        {
+            gb.display.setColor(WHITE);
+        }
+        rate--;
+        gb.display.println(textRejouer);
+
+        if (gb.buttons.pressed(BUTTON_A))
+        {
+            isDead = false;
+            generatePlatforms();
+        }
     }
     gb.display.setColor(WHITE);
     gb.display.drawImage(positionX, positionY, player);
